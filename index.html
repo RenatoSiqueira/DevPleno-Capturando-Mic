@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.js"></script>
+</head>
+
+<body>
+    <button id='btn'>Start</button>
+    <script>
+        $(function () {
+            if (!navigator.mediaDevices) {
+                console.log('getUserMedia não suportado.');
+            } else {
+                let chunks = [] // Fix do audio 'somado'
+                let mediaRecorder
+                navigator
+                    .mediaDevices
+                    .getUserMedia({ audio: true })
+                    .then(stream => {
+                        console.log(stream)
+                        mediaRecorder = new MediaRecorder(stream)
+
+                        mediaRecorder.ondataavailable = data => {
+                            chunks.push(data.data)
+                            console.log('ondata', data)
+                        }
+                        mediaRecorder.onstop = () => {
+                            // const blob = new Blob(chunks, { type: 'audio/ogg; code=opus' }) 
+                            const blob = new Blob(chunks, { 'type': 'audio/ogg; codecs=opus' }); // Atualização Recente
+                            chunks = [] // Adicionado para fix audio 'somado'
+                            const reader = new window.FileReader()
+                            reader.readAsDataURL(blob)
+                            reader.onloadend = () => {
+                                console.log(reader.result)
+                                const audio = document.createElement('audio')
+                                audio.src = reader.result
+                                audio.controls = true
+                                console.log(chunks)
+                                $('body').append(audio)
+                            }
+                            console.log('stop')
+                        }
+
+                        // mediaRecorder.start()
+                        // setTimeout(() => mediaRecorder.stop(), 3000)
+                    }, err => {
+                        console.log(err)
+                        $('body').append('<p>Voce deve permitir o audio</p>')
+                    })
+            }
+
+            $('#btn').click(function () {
+                if ($(this).text() === 'Start') {
+                    mediaRecorder.start()
+                    $(this).text('Stop')
+                } else {
+                    mediaRecorder.stop()
+                    $(this).text('Start')
+                }
+            })
+        })
+    </script>
+</body>
+
+</html>
